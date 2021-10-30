@@ -1,7 +1,6 @@
 # McImage
-[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/mcimage/McImage)
 
-> I will continue to update, please rest assured to use
+[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/mcimage/McImage)
 
 [中文文档](README-CN.md)
 
@@ -24,7 +23,6 @@ Used algorithm
 ### Release Success!
 
 The version 1.0.1 now support all build.gradle version!
-Already support mavenCentral.
 
 ### Feature
 
@@ -36,17 +34,15 @@ Already support mavenCentral.
 ### Update Log
 
 > The user use v0.0.2 update plugin need update your mctools dir together.
-- 1.5.1 : Fix windows support
-- 1.5.0 : Update gradle plugin to 3.5.0 , change the get android resources way，fix not support abbreviation（such as assembleDebug use aD) bug.
-- 1.4.0 : Feature, Support for selecting different optimization types，"ConvertWebp" or "Compress" can be chosen.Default "Compress". "CompressWebp" is a better compression ratio but it don't support api < 18
-- 1.3.0 : Feature, Support multi-thread processing
+- 1.4.0 : Featrue, Support for selecting different optimization types，"ConvertWebp" or "Compress" can be chosen.Default "WebpConvert" be Choosen because it has a better compression ratio.
+- 1.3.0 : Featrue, Support multi-thread processing
 - 1.2.0 : Feature, get compress command from system environment prior to local file
 - 1.0.1 : Bug fix, fix maxSize float error
 - 1.0.0 : Support AAPT2 , now don't need to close aapt2 with "android.enableAapt2=false", you can delete this line in gradle.properties.
 - 0.1.4 : Bug fix, add the white list feature, add the img width and height check feature.
 - 0.1.2 : Bug fix(Fix the problem that check image size not work)
 - 0.1.1 : Bug fix(Fix the problem not work for module and fix the problem of enableWhenDebug not work)
-- 0.0.4 : Add auto choose system future.Remove webpQuality config (Set inappropriate will result the img lossless)
+- 0.0.4 : Add auto choose system future.Remove webpQualitu config (Set inappropriate will result the img lossless)
 - 0.0.3 : Add webp ! It will auto convert your png (without alpha in min API < 18 and not work in min API < 14) and jpg to webp if it will become more small.
 - 0.0.2 : Improve the log.
 
@@ -61,10 +57,10 @@ The first, add the plugin in your project root build.gradle.
 ```groovy
 buildscript {
     repositories {
-        mavenCentral()
+        jcenter()
     }
     dependencies {
-        classpath 'com.smallsoho.mobcase:McImage:1.5.1'
+        classpath 'com.smallsoho.mobcase:McImage:1.4.0'
     }
 }
 ```
@@ -89,19 +85,20 @@ You can set the config in build.gradle.If you not set this,all config will use d
 ```groovy
 McImageConfig {
     isCheckSize true //Whether to detect image size，default true
-    optimizeType "Compress" //Optimize Type，"ConvertWebp" or "Compress"，default "Compress", "CompressWebp" is a better compression ratio but it don't support api < 18
+    optimizeType "ConertWebp" //Optimize Type，"ConvertWebp" or "Compress"，default "ConvertWebp"
     maxSize 1*1024*1024 //big image size threshold，default 1MB
-    enableWhenDebug false //switch in debug build，default true
+    enableWhenDebug false //swithc in debug build，default true
     isCheckPixels true // Whether to detect image pixels of width and height，default true
-    maxWidth 1000 //default 1000
-    maxHeight 1000 //default 1000
+    maxWidth 1000 //defualt 1000 
+    maxHeight 1000 //defualt 1000 
     whiteList = [ //do not do any optimization for the images who in the list 
               "icon_launcher.png"
     ]
-    mctoolsDir "$rootDir"
+    mctoolsDir "$rootDir/tools"
     isSupportAlphaWebp false  //Whether support convert the Image with Alpha chanel to Webp，default false, the images with alpha chanels will be compressed.if config true, its need api level >=18 or do some compatible measures 
-    multiThread true  //Whether open multi-thread processing，default true
-    bigImageWhiteList = [] //do not detect big size or large pixels for the images who in the list
+    multiThread true  //Whether open muti-thread processing，default true 
+    bigImageWhiteList = [ //do not detect big size or large pixels for the images who in the list
+    ]
 }
 ```
 

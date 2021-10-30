@@ -1,4 +1,4 @@
-package com.smallsoho.mcplugin.image
+package com.smallsoho.mcplugin.image;
 
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.LibraryExtension
@@ -11,9 +11,7 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
 import java.io.File
-import java.util.concurrent.Callable
-import java.util.concurrent.Executors
-import java.util.concurrent.Future
+import java.util.concurrent.*
 
 class ImagePlugin : Plugin<Project> {
 
@@ -22,15 +20,11 @@ class ImagePlugin : Plugin<Project> {
     private var oldSize: Long = 0
     private var newSize: Long = 0
     val bigImgList = ArrayList<String>()
-
-    var isDebugTask = false
-    var isContainAssembleTask = false
-
     override fun apply(project: Project) {
 
         mcImageProject = project
 
-        //check is library or application
+        //判断是library还是application
         val hasAppPlugin = project.plugins.hasPlugin("com.android.application")
         val variants = if (hasAppPlugin) {
             (project.property("android") as AppExtension).applicationVariants
@@ -42,74 +36,75 @@ class ImagePlugin : Plugin<Project> {
         project.extensions.create("McImageConfig", Config::class.java)
         mcImageConfig = project.property("McImageConfig") as Config
 
-        project.gradle.taskGraph.whenReady {
-            it.allTasks.forEach { task ->
-                val taskName = task.name
-                if (taskName.contains("assemble") || taskName.contains("resguard") || taskName.contains("bundle")) {
-                    if (taskName.toLowerCase().endsWith("debug") &&
-                            taskName.toLowerCase().contains("debug")) {
-                        isDebugTask = true
-                    }
-                    isContainAssembleTask = true
-                    return@forEach
+        val taskNames = project.gradle.startParameter.taskNames
+        var isDebugTask = false
+        var isContainAssembleTask = false
+        for (index: Int in 0 until taskNames.size) {
+            val taskName = taskNames[index]
+            if (taskName.contains("assemble") || taskName.contains("resguard") || taskName.contains("bundle")) {
+                if (taskName.toLowerCase().endsWith("debug") &&
+                        taskName.toLowerCase().contains("debug")) {
+                    isDebugTask = true
                 }
+                isContainAssembleTask = true
+                break
             }
         }
 
-        project.afterEvaluate {
+        //export build clean
+        if (!isContainAssembleTask) {
+            return
+        }
+
+        project.afterEvaluate { _ ->
+
             variants.all { variant ->
 
                 variant as BaseVariantImpl
 
                 checkMcTools(project)
 
-                val mergeResourcesTask = variant.mergeResourcesProvider.get()
+                //debug enable
+                if (isDebugTask && !mcImageConfig.enableWhenDebug) {
+                    println("Debug not run !")
+                    return@all
+                }
+
+                val mergeResourcesTask = project.tasks.findByName("merge${variant.name.capitalize()}Resources")
                 val mcPicTask = project.task("McImage${variant.name.capitalize()}")
 
-                mcPicTask.doLast {
+                mcPicTask.doLast { _ ->
+                    println("---- McImage Plugin Start ----")
+                    println(mcImageConfig.toString())
 
-                    //debug enable
-                    if (isDebugTask && !mcImageConfig.enableWhenDebug) {
-                        LogUtil.log("Debug not run ^_^")
-                        return@doLast
-                    }
-
-                    //assemble passed
-                    if (!isContainAssembleTask) {
-                        LogUtil.log("Don't contain assemble task, mcimage passed")
-                        return@doLast
-                    }
-
-                    LogUtil.log("---- McImage Plugin Start ----")
-                    LogUtil.log(mcImageConfig.toString())
-
-                    val dir = variant.allRawAndroidResources.files
+                    val dir = variant.mergeResources.computeResourceSetList0() //强行调用一下
 
                     val cacheList = ArrayList<String>()
 
                     val imageFileList = ArrayList<File>()
 
-                    for (channelDir: File in dir) {
-                        traverseResDir(channelDir, imageFileList, cacheList, object : IBigImage {
-                            override fun onBigImage(file: File) {
-                                bigImgList.add(file.absolutePath)
-                            }
-                        })
+                    if (dir != null) {
+                        for (channelDir: File in dir) {
+                            traverseResDir(channelDir, imageFileList, cacheList, object : IBigImage {
+                                override fun onBigImage(file: File) {
+                                    bigImgList.add(file.absolutePath)
+                                }
+                            })
+                        }
                     }
 
                     checkBigImage()
 
                     val start = System.currentTimeMillis()
 
-                    mtDispatchOptimizeTask(imageFileList)
-                    LogUtil.log(sizeInfo())
-                    LogUtil.log("---- McImage Plugin End ----, Total Time(ms) : ${System.currentTimeMillis() - start}")
+                    mtDispathOptimizeTask(imageFileList)
+                    println(sizeInfo())
+                    println("---- McImage Plugin End ----, Total Time(ms) : ${System.currentTimeMillis() - start}")
                 }
 
-                //chmod task
                 val chmodTaskName = "chmod${variant.name.capitalize()}"
                 val chmodTask = project.task(chmodTaskName)
-                chmodTask.doLast {
+                chmodTask.doLast { _ ->
                     //chmod if linux
                     if (Tools.isLinux()) {
                         Tools.chmod()
@@ -117,13 +112,12 @@ class ImagePlugin : Plugin<Project> {
                 }
 
                 //inject task
-                (project.tasks.findByName(chmodTask.name) as Task).dependsOn(mergeResourcesTask.taskDependencies.getDependencies(mergeResourcesTask))
+                (project.tasks.findByName(chmodTask.name) as Task).dependsOn(mergeResourcesTask!!.taskDependencies.getDependencies(mergeResourcesTask))
                 (project.tasks.findByName(mcPicTask.name) as Task).dependsOn(project.tasks.findByName(chmodTask.name) as Task)
                 mergeResourcesTask.dependsOn(project.tasks.findByName(mcPicTask.name))
 
             }
         }
-
     }
 
     private fun traverseResDir(file: File, imageFileList: ArrayList<File>, cacheList: ArrayList<String>, iBigImage: IBigImage) {
@@ -133,7 +127,7 @@ class ImagePlugin : Plugin<Project> {
             cacheList.add(file.absolutePath)
         }
         if (file.isDirectory) {
-            file.listFiles()?.forEach {
+            file.listFiles().forEach {
                 if (it.isDirectory) {
                     traverseResDir(it, imageFileList, cacheList, iBigImage)
                 } else {
@@ -150,7 +144,7 @@ class ImagePlugin : Plugin<Project> {
             return
         }
         if (((mcImageConfig.isCheckSize && ImageUtil.isBigSizeImage(file, mcImageConfig.maxSize))
-                        || (mcImageConfig.isCheckPixels
+                || (mcImageConfig.isCheckPixels
                         && ImageUtil.isBigPixelImage(file, mcImageConfig.maxWidth, mcImageConfig.maxHeight)))
                 && !mcImageConfig.bigImageWhiteList.contains(file.name)) {
             iBigImage.onBigImage(file)
@@ -158,8 +152,8 @@ class ImagePlugin : Plugin<Project> {
         imageFileList.add(file)
     }
 
-    private fun mtDispatchOptimizeTask(imageFileList: ArrayList<File>) {
-        if (imageFileList.size == 0 || bigImgList.isNotEmpty()) {
+    private fun mtDispathOptimizeTask(imageFileList: ArrayList<File>) {
+        if (imageFileList == null || imageFileList.size == 0 || !bigImgList.isEmpty()) {
             return
         }
         val coreNum = Runtime.getRuntime().availableProcessors()
@@ -190,8 +184,8 @@ class ImagePlugin : Plugin<Project> {
     }
 
     private fun optimizeImage(file: File) {
-        val path: String = file.path
-        if (File(path).exists()) {
+        var path: String = file.path
+        if(File(path).exists()) {
             oldSize += File(path).length()
         }
         when (mcImageConfig.optimizeType) {
@@ -204,13 +198,13 @@ class ImagePlugin : Plugin<Project> {
     }
 
     private fun countNewSize(path: String) {
-        if (File(path).exists()) {
+        if(File(path).exists()) {
             newSize += File(path).length()
         } else {
             //转成了webp
             val indexOfDot = path.lastIndexOf(".")
             val webpPath = path.substring(0, indexOfDot) + ".webp"
-            if (File(webpPath).exists()) {
+            if(File(webpPath).exists()) {
                 newSize += File(webpPath).length()
             } else {
                 LogUtil.log("McImage: optimizeImage have some Exception!!!")

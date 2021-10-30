@@ -2,8 +2,6 @@
 
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/mcimage/McImage)
 
-> 我会持续更新，请大家放心使用，Bug也会及时跟进
-
 [Android优雅的打包时自动化获取全部res资源)](https://smallsoho.com/android/2018/07/26/Android-Android%E4%BC%98%E9%9B%85%E7%9A%84%E6%89%93%E5%8C%85%E6%97%B6%E8%87%AA%E5%8A%A8%E5%8C%96%E8%8E%B7%E5%8F%96%E5%85%A8%E9%83%A8res%E8%B5%84%E6%BA%90/)
 
 McImage是无侵入式的全量压缩资源图片插件
@@ -23,7 +21,6 @@ McImage是无侵入式的全量压缩资源图片插件
 ### Release Success!
 
 1.0.1版本现在支持全版本的build.gradle脚本！
-最近版本已经支持mavenCentral()
 
 ### Feature
 
@@ -35,9 +32,7 @@ McImage是无侵入式的全量压缩资源图片插件
 ### Update Log
 
 > v0.0.2以后的用户更新到0.0.2以上需要升级你的mctools文件夹，已经上传到release。
-- 1.5.1 : 修改对win的支持
-- 1.5.0 : 更新gradle plugin 到 3.5.0 ，更新获取android资源方式，修复了不支持缩写（assembleDebug 缩写 aD）的问题
-- 1.4.0 : 区分优化类型，可选择ConvertWep或Compress, 默认选择Compress. 使用ConvertWep需要min sdk >= 18.但是压缩效果更好
+- 1.4.0 : 区分优化类型，可选择ConvertWep或Compress, 默认ConvertWebp，压缩比更高
 - 1.3.0 : 支持多线程压缩，缩短执行时间
 - 1.2.0 : 优先从系统获取压缩命令, 不存在使用本地文件命令
 - 1.0.1 : 修复了maxSize无法使用浮点数的问题
@@ -62,10 +57,10 @@ PS:目前我司项目正在使用此仓库进行压缩
 ```groovy
 buildscript {
     repositories {
-        mavenCentral()
+        jcenter()
     }
     dependencies {
-        classpath 'com.smallsoho.mobcase:McImage:1.5.1'
+        classpath 'com.smallsoho.mobcase:McImage:1.4.0'
     }
 }
 ```
@@ -89,19 +84,20 @@ mctools
 ```groovy
 McImageConfig {
   isCheckSize true //是否检测图片大小，默认为true
-  optimizeType "Compress" //优化类型，可选"ConvertWebp"，"Compress"，转换为webp或原图压缩，默认Compress，使用ConvertWep需要min sdk >= 18.但是压缩效果更好
+  optimizeType "ConertWebp" //优化类型，可选"ConvertWebp"，"Compress"，转换为webp或原图压缩，默认ConvertWebp，压缩比更高
   maxSize 1*1024*1024 //大图片阈值，default 1MB
   enableWhenDebug false //debug下是否可用，default true
   isCheckPixels true // 是否检测大像素图片，default true
-  maxWidth 1000 //default 1000 如果开启图片宽高检查，默认的最大宽度
-  maxHeight 1000 //default 1000 如果开启图片宽高检查，默认的最大高度
+  maxWidth 1000 //defualt 1000 如果开启图片宽高检查，默认的最大宽度
+  maxHeight 1000 //defualt 1000 如果开启图片宽高检查，默认的最大高度
   whiteList = [ //默认为空，如果添加，对图片不进行任何处理
              "icon_launcher.png"
   ]
-  mctoolsDir "$rootDir"
+  mctoolsDir "$rootDir/tools"
   isSupportAlphaWebp false  //是否支持带有透明度的webp，default false,带有透明图的图片会进行压缩
   multiThread true  //是否开启多线程处理图片，default true 
-  bigImageWhiteList = [] //默认为空，如果添加，大图检测将跳过这些图片
+  bigImageWhiteList = [ //默认为空，如果添加，大图检测将跳过这些图片
+  ]
 }
 ```
 

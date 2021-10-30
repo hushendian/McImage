@@ -1,8 +1,8 @@
 apply plugin: 'maven'
 apply plugin: 'signing'
 
-def DEBUG = false
-def VERSION = '1.5.1'
+def DEBUG = true
+def VERSION = '1.4.0'
 def GROUP = 'com.smallsoho.mobcase'
 def ARTIFACT = 'McImage'
 
@@ -18,9 +18,6 @@ static def isSnapshot(def version) {
 uploadArchives {
     repositories {
         mavenDeployer {
-
-            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-
             if (DEBUG) {
                 repository(url: uri("${buildDir}/libs"))
             } else {
@@ -40,66 +37,9 @@ uploadArchives {
                     }
                 }
             }
-            pom {
-                groupId = GROUP
-                artifactId = ARTIFACT
-                version = VERSION
-                project {
-                    name = "McImage"
-                    packaging = "aar"
-                    description = "McImage is a Non-invasive plugin for compress all res in your project."
-                    url = "https://github.com/smallSohoSolo/McImage"
-
-                    scm {
-                        connection "https://github.com/smallSohoSolo/McImage"
-                        developerConnection "https://github.com/smallSohoSolo/McImage"
-                        url "https://github.com/smallSohoSolo/McImage"
-                    }
-
-                    licenses {
-                        license {
-                            name "Apache-2.0 License"
-                            url "https://github.com/smallSohoSolo/McImage/blob/master/LICENSE"
-                            distribution "A permissive license whose main conditions require preservation of copyright and license notices. Contributors provide an express grant of patent rights. Licensed works, modifications, and larger works may be distributed under different terms and without source code."
-                        }
-                    }
-                    developers {
-                        developer {
-                            id "smallSohoSolo"
-                            name "smallSohosolo"
-                        }
-                    }
-                }
-            }
+            pom.groupId = GROUP
+            pom.artifactId = ARTIFACT
+            pom.version = VERSION
         }
     }
-}
-
-afterEvaluate { project ->
-    if (project.getPlugins().hasPlugin('com.android.application') ||
-            project.getPlugins().hasPlugin('com.android.library')) {
-        task androidSourcesJar(type: Jar) {
-            classifier = 'sources'
-            from android.sourceSets.main.java.source
-        }
-        artifacts {
-            archives androidSourcesJar
-        }
-    } else {
-        task javadocJar(type: Jar) {
-            classifier = 'javadoc'
-            from javadoc
-        }
-        task sourcesJar(type: Jar) {
-            classifier = 'sources'
-            from sourceSets.main.allSource
-        }
-        artifacts {
-            archives javadocJar, sourcesJar
-        }
-    }
-}
-
-signing {
-    sign configurations.archives
 }

@@ -10,17 +10,18 @@ class CompressUtil {
             if (!ImageUtil.isImage(imgFile)) {
                 return
             }
+
             val oldSize = imgFile.length()
-            val newSize: Long
+            var newSize = 0L
             if (ImageUtil.isJPG(imgFile)) {
-                val tempFilePath: String = "${imgFile.path.substring(0, imgFile.path.lastIndexOf("."))}_temp" +
-                        imgFile.path.substring(imgFile.path.lastIndexOf("."))
-                Tools.cmd("guetzli", "${imgFile.path} $tempFilePath")
-                val tempFile = File(tempFilePath)
+                var tempFilePath: String = "${imgFile.path.substring(0, imgFile.path.lastIndexOf("."))}_temp" +
+                        "${imgFile.path.substring(imgFile.path.lastIndexOf("."))}"
+                Tools.cmd("guetzli", "${imgFile.path} ${tempFilePath}")
+                val tempFile: File = File(tempFilePath)
                 newSize = tempFile.length()
-                LogUtil.log("newSize = $newSize")
+                println("newSize = ${newSize}")
                 if (newSize < oldSize) {
-                    val imgFileName: String = imgFile.path
+                    var imgFileName: String = imgFile.path
                     if (imgFile.exists()) {
                         imgFile.delete()
                     }
