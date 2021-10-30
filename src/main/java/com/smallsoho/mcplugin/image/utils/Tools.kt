@@ -13,13 +13,12 @@ class Tools {
             val cmdStr = if (isCmdExist(cmd)) {
                 "$cmd $params"
             } else {
-                val system = System.getProperty("os.name")
-                when (system) {
-                    "Mac OS X" ->
+                when {
+                    isMac() ->
                         FileUtil.getToolsDirPath() + "mac/" + "$cmd $params"
-                    "Linux" ->
+                    isLinux() ->
                         FileUtil.getToolsDirPath() + "linux/" + "$cmd $params"
-                    "Windows" ->
+                    isWindows() ->
                         FileUtil.getToolsDirPath() + "windows/" + "$cmd $params"
                     else -> ""
                 }
@@ -42,8 +41,11 @@ class Tools {
         }
 
         fun isWindows(): Boolean {
+
             val system = System.getProperty("os.name")
-            return system.startsWith("Windows")
+            print("------------------"+system.toLowerCase().contains("win"))
+            print("--------system----------"+system)
+            return system.toLowerCase().contains("win")
         }
 
         fun chmod() {
@@ -71,7 +73,7 @@ class Tools {
             return try {
                 bufferReader.readLine()
             } catch (e: Exception) {
-                println(e)
+                LogUtil.log(e)
                 null
             }
         }
