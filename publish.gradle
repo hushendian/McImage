@@ -1,6 +1,6 @@
-apply plugin: 'maven'
+//apply plugin: 'maven'
 apply plugin: 'signing'
-apply plugin: 'com.github.dcendents.android-maven'
+//apply plugin: 'com.github.dcendents.android-maven'
 
 def DEBUG = false
 def VERSION = '1.5.1'
