@@ -73,7 +73,6 @@ class Tools {
             return try {
                 bufferReader.readLine()
             } catch (e: Exception) {
-                LogUtil.log(e)
                 null
             }
         }
